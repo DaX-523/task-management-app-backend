@@ -95,6 +95,7 @@ exports.getHistory = (req, res, next) => {
 
 exports.createTask = (req, res, next) => {
   const errors = validationResult(req);
+  let newVal;
   if (!errors.isEmpty()) {
     const error = new Error('Validation failed, entered data is incorrect.');
     error.statusCode = 422;
@@ -111,12 +112,13 @@ exports.createTask = (req, res, next) => {
   task
     .save()
     .then(result => {
+      newVal = [result.title, result.description, result.duedate, result.priority, result.status]
       const history = new History({
         taskId: result._id.toString(),
         action: 'Create',
         fieldName: null, //fieldName is null at the time of document creation
         previousValue: null,
-        newValue: result._id.toString()
+        newValue: newVal
       })
       return history.save()
     })
@@ -189,6 +191,7 @@ exports.updateTask = (req, res, next) => {
 
 exports.deleteTask = (req, res, next) => {
   const taskId = req.params.taskId;
+  let tasks;
   Task.findById(taskId)
     .then(task => {
       if (!task) {
@@ -196,7 +199,7 @@ exports.deleteTask = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
-   
+      tasks = [task.title, task.description, task.duedate, task.priority, task.status];
       return Task.findByIdAndRemove(taskId);
     })
     .then(result => {
@@ -204,7 +207,7 @@ exports.deleteTask = (req, res, next) => {
         taskId: taskId,
         action: 'Delete',
         fieldName: null,  //fieldName is null at the time of document deletion
-        previousValue: taskId,
+        previousValue: tasks,
         newValue: null
       })
       return history.save()
